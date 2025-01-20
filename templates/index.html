@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .navbar {
+            background: #333;
+            color: #fff;
+            padding: 1rem;
+            text-align: left;
+            font-size: 1.2rem;
+        }
+        .navbar span {
+            margin-left: 1rem;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            justify-content: center;
+            margin: 50px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #fff;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+            background: #ddd;
+        }
+        .result {
+            margin: 20px;
+            font-size: 1.5rem;
+        }
+        .btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar"><span>Unity Circle</span></div>
+    <div class="game-board" id="gameBoard"></div>
+    <div class="result" id="result"></div>
+    <button class="btn" id="restart" style="display: none;">Restart</button>
+    <script>
+        const board = Array(9).fill('');
+        const gameBoard = document.getElementById('gameBoard');
+        const result = document.getElementById('result');
+        const restart = document.getElementById('restart');
+        let gameOver = false;
+
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            board.forEach((cell, i) => {
+                const div = document.createElement('div');
+                div.className = `cell ${cell ? 'disabled' : ''}`;
+                div.textContent = cell;
+                div.onclick = () => handleMove(i);
+                gameBoard.appendChild(div);
+            });
+        }
+
+        function handleMove(index) {
+            if (gameOver || board[index]) return;
+            fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ board, user_move: index })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) return alert(data.error);
+                    board.splice(0, board.length, ...data.board);
+                    renderBoard();
+                    if (data.result) {
+                        result.textContent = data.result === 'X' ? 'You win!' : data.result === 'O' ? 'You lost!' : 'It\'s a draw!';
+                        gameOver = true;
+                        restart.style.display = 'block';
+                    }
+                });
+        }
+
+        restart.onclick = () => {
+            board.fill('');
+            gameOver = false;
+            result.textContent = '';
+            restart.style.display = 'none';
+            renderBoard();
+        };
+
+        renderBoard();
+    </script>
+</body>
+</html>
